@@ -17,40 +17,11 @@
 - To run/test the program
     1. Create a VM in Virtual Machine Manager and put the `server.py` code in it.
     2. Configure the VM to autostart the `server.py` program as soon as the OS boots.
-    3. Create multiple clones of the same VM and follow a proper naming convention. The numbering should start from 0
-        - Example: `AnyPrefix-0000`, `AnyPrefix-0001`, `AnyPrefix-0002`
-        - Write about this naming convention inside the `client.conf` file
+    3. Create extra VM and follow a proper naming convention. The numbering should start from 0
+        - Example: `AnyPrefix-0000`, `AnyPrefix-0001`
     4. Launch the first VM - `AnyPrefix-0000`
-    5. Open terminal and run `client.py`, `client_communicator.py`, `auto_scaler.py`
-    6. Use `client_communicator.py` to configure the `client.py` at runtime. Supported functionalities:
-        - Add server syntax    = `+ <IP_ADDRESS> <PORT>`
-            - Here, IP Address and Port Number are of the server program.
-        - Remove server syntax = `- <IP_ADDRESS> <PORT>`
-            - Here, IP Address and Port Number are of the server program.
-        - Remove all servers   = `clear_servers`
-        - Refresh the servers list = `refresh`
-            - libvirt API is used for checking the list of online VM's and those VM's whose name prefix does not match with the one mentioned in the `client.conf` are removed from the list.
-        - Change client's request/query generation speed:
-            - `low`
-            - `mid`
-            - `high`
-            - `custom 0.3`   <--- here, 0.3 can be replaced with any floating point value
-    7. View the realtime graph plotted by the `auto_scaler.py` to get an insight into the working of the autoscaler
-
-
-### Standard things use in programming
-
-- All configuration files are stored in JSON format
-- `server.py` configuration is stored in `server.conf`
-- `client.py` configuration is stored in `client.conf`
-    - This same file is used by `auto_scaler.py` as well because, the `client.py` in this assignment is equivalent to a
-      load balancer in real life
-    - `client_communicator.py` also uses the same configuration file
-- The client-server communication message configuration is stored in `message.conf`
-- `big-endian` format in used for numbers when converted to bytes
-- `4 bytes - unsigned int` is used to represent client request integers
-- `8 bytes - unsigned long long` is used to represent server response integers
-
+    5. Open terminal and run `client.py`, `autoscaler.py`
+    7. View the realtime graph plotted by the `autoscaler.py` to get an insight into the working of the autoscaler
 
 ### Useful Commands
 
