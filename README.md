@@ -1,4 +1,4 @@
-# CS695-Assignment-2
+# Cloud Computing - Assignment
 
 - Programming Assignment 2 - Build your own auto-scaling client server application using the libvirt API
 
@@ -131,3 +131,4 @@ route
     - https://stackoverflow.com/questions/19057915/libvirt-fetch-ipv4-address-from-guest
     - https://unix.stackexchange.com/questions/33191/how-to-find-the-ip-address-of-a-kvm-virtual-machine-that-i-can-ssh-into-it
     - https://www.cyberciti.biz/faq/find-ip-address-of-linux-kvm-guest-virtual-machine/
+    - https://github.com/fenilgmehta/CS695-Assignment-2
