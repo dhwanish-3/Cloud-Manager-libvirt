@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 # Server config
-# Server ip address is obtained using the hostname command
+# Server IP address is obtained using the hostname command
 server_port = 12345
 
 # Function to simulate a CPU-intensive task - Matrix Multiplication
@@ -19,11 +19,11 @@ def matrix_multiplication_task(size):
     return result_matrix
 
 # Function to handle each client request
-def handle_client(client_socket):
+def handle_client(data, addr, server_socket):
     try:
         # Receive request from client (matrix size)
-        request = client_socket.recv(1024).decode()
-        print(f"Received request for matrix size: {request}")
+        request = data.decode()
+        print(f"Received request for matrix size: {request} from {addr}")
         
         matrix_size = int(request)
         
@@ -32,26 +32,22 @@ def handle_client(client_socket):
         
         # Sending response back to client (matrix multiplication done)
         response = f"Matrix multiplication of size {matrix_size} completed"
-        client_socket.send(response.encode())
+        server_socket.sendto(response.encode(), addr)
         
-    finally:
-        client_socket.close()
+    except Exception as e:
+        print(f"Error handling client {addr}: {e}")
 
 # Server setup to handle multiple client connections
 def server_thread(server_ip, server_port):
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((server_ip, server_port))
-    server.listen(5)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.bind((server_ip, server_port))
     print(f"Server listening on {server_ip}:{server_port}")
 
     while True:
-        client_socket, addr = server.accept()
-        print(f"Connection from {addr}")
-        
+        data, addr = server_socket.recvfrom(1024)
         # Handle each client in a separate thread
-        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+        client_handler = threading.Thread(target=handle_client, args=(data, addr, server_socket))
         client_handler.start()
-
 
 if __name__ == "__main__":
     # Get the IP address of the server

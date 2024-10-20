@@ -117,9 +117,8 @@ def notify_client_of_new_vm(vm_name):
 
     try:
         # Create a socket to send the notification to the client
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((client_ip, client_port))
-            s.sendall(message.encode())
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(message.encode(), (client_ip, client_port))
             print("Client notified of new VM.")
     except ConnectionError as e:
         print(f"Error notifying client: {e}")
@@ -130,14 +129,11 @@ def notify_client_vm_removed(vm_name):
 
     try:
         # Create a socket to send the notification to the client
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((client_ip, client_port))
-            s.sendall(message.encode())
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(message.encode(), (client_ip, client_port))
             print("Client notified of VM removal.")
     except ConnectionError as e:
         print(f"Error notifying client: {e}")
-
-
 if __name__ == "__main__":
     # Connect to the hypervisor
     conn = libvirt.open('qemu:///system')
