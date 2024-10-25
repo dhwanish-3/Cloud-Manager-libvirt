@@ -2,14 +2,17 @@ import libvirt
 import time
 import sys
 import socket
+import threading
+import matplotlib.pyplot as plt
+from collections import defaultdict
 
 # VM details for autoscaling
-primary_vm_name = "ubuntu20.04_test1"
-primary_vm_ip = "192.168.122.245"
+primary_vm_name = "ubuntu0"
+primary_vm_ip = "192.168.122.86"
 primary_vm_port = 12345
 
-extra_vm_name = "ubuntu20.04_test2"
-extra_vm_ip = "192.168.122.86"
+extra_vm_name = "ubuntu1"
+extra_vm_ip = "192.168.122.203"
 extra_vm_port = 12345
 
 # Client config
@@ -26,7 +29,7 @@ def get_cpu_usage(domain_obj, sleep_time=1):
     return cpu_percent / domain_cpu_cores
 
 # Monitor CPU usage and trigger autoscaling
-def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=35.0, low_cpu_threshold=20.0, interval=2, cooldown_time=100):
+def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=35.0, low_cpu_threshold=20.0, interval=1, cooldown_time=100):
     primary_domain = conn.lookupByName(primary_vm_name)
     if primary_domain is None:
         print(f"Primary domain {primary_vm_name} not found", file=sys.stderr)
@@ -36,23 +39,42 @@ def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=35.0, low_cp
     extra_domain = None
     last_vm_start_time = 0
 
+    cpu_usage_data = defaultdict(list)
+    time_data = []
+
+    plt.ion()
+    fig, ax = plt.subplots()
+
     while True:
+        current_time = time.time()
+        time_data.append(current_time)
+
         primary_cpu_usage = get_cpu_usage(primary_domain, interval)
+        cpu_usage_data[primary_vm_name].append(primary_cpu_usage)
         print(f"CPU usage of {primary_vm_name}: {primary_cpu_usage:.2f}%")
 
         if running_vm and extra_domain:
             extra_cpu_usage = get_cpu_usage(extra_domain, interval)
+            cpu_usage_data[extra_vm_name].append(extra_cpu_usage)
             print(f"CPU usage of {extra_vm_name}: {extra_cpu_usage:.2f}%")
         else:
             print(f"Extra VM {extra_vm_name} is not running.")
+            cpu_usage_data[extra_vm_name].append(0)
 
         if primary_cpu_usage > high_cpu_threshold and not running_vm:
             print(f"High CPU usage detected: {primary_cpu_usage:.2f}%. Triggering autoscaling...")
             extra_domain = start_new_vm(conn, extra_vm_name)
             if extra_domain:
-                notify_client_of_new_vm(extra_vm_name, extra_vm_ip, extra_vm_port)
                 running_vm = True
                 last_vm_start_time = time.time()
+            
+            # Notify client after 15 seconds without blocking the main loop
+            def delayed_notify():
+                time.sleep(15)
+                notify_client_of_new_vm(extra_vm_name, extra_vm_ip, extra_vm_port)
+            
+            notify_thread = threading.Thread(target=delayed_notify)
+            notify_thread.start()
 
         elif primary_cpu_usage < low_cpu_threshold and running_vm:
             if time.time() - last_vm_start_time >= cooldown_time:
@@ -62,6 +84,19 @@ def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=35.0, low_cp
                 running_vm = False
             else:
                 print(f"Cooldown in effect. Extra VM will not be shut down yet.")
+
+        # Plotting
+        ax.clear()
+        for vm_name, usage_data in cpu_usage_data.items():
+            # Adjust time data to show the last 100 seconds
+            adjusted_time_data = [(t - current_time) for t in time_data[-50:]]
+            ax.plot(adjusted_time_data, usage_data[-50:], label=vm_name)
+        ax.legend()
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('CPU Usage (%)')
+        ax.set_xlim([-100, 0])
+        ax.set_ylim([0, 100])
+        plt.pause(0.01)
 
         time.sleep(interval)
 
@@ -76,7 +111,7 @@ def start_new_vm(conn, vm_name):
             
         # Wait for VM to fully boot (customize this duration as needed)
         print("Waiting for VM to fully boot...")
-        time.sleep(15)
+        # time.sleep(15)
         return domain
     except libvirt.libvirtError as e:
         print(f"Error starting new VM {vm_name}: {e}")
@@ -120,4 +155,3 @@ if __name__ == "__main__":
         monitor_and_autoscale(conn, primary_vm_name)
     finally:
         conn.close()
-

@@ -1,0 +1,13 @@
+[Unit]
+Description=Start Python Server on Boot
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/dhwany/server.py
+WorkingDirectory=/home/dhwany/
+Restart=always
+User=dhwany
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

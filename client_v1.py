@@ -1,8 +1,13 @@
 import socket
 import threading
+import time
+
+# delay between requests
+delay_between_requests_low = 0.2
+delay_between_requests_high = 0.1
 
 # Server config
-server_ip = "192.168.122.245"
+server_ip = "192.168.122.86"
 server_port = 12345
 
 # client config
@@ -10,12 +15,12 @@ client_ip = "192.168.122.1"
 client_port = 6000
 
 # Matrix config
-low_matrix_size = 200
-high_matrix_size = 500
+low_matrix_size = 600
+high_matrix_size = 1000
 
 # Number of requests
-low_num_requests = 50
-high_num_requests = 100
+low_num_requests = 100
+high_num_requests = 200
 
 # List of servers available (IPs and Ports)
 servers = [(server_ip, server_port)]
@@ -37,7 +42,7 @@ def send_request(server_ip, server_port, matrix_size):
     finally:
         client.close()
 
-def send_requests_to_servers(matrix_size, num_requests):
+def send_requests_to_servers(matrix_size, num_requests, delay_between_requests):
     global server_pointer
     threads = []
     
@@ -48,7 +53,7 @@ def send_requests_to_servers(matrix_size, num_requests):
                 break
             current_servers = list(servers)
             num_servers = len(current_servers)
-
+        next_sleep_time = time.time() + delay_between_requests
         server_ip, server_port = current_servers[server_pointer % num_servers]
         print(f"Server_ip is : {server_ip}")
         server_pointer = server_pointer + 1
@@ -56,6 +61,9 @@ def send_requests_to_servers(matrix_size, num_requests):
         t = threading.Thread(target=send_request, args=(server_ip, server_port, matrix_size))
         threads.append(t)
         t.start()
+
+        if time.time() < next_sleep_time:
+            time.sleep(next_sleep_time - time.time())
 
     for t in threads:
         t.join()
@@ -91,12 +99,17 @@ if __name__ == "__main__":
         if mode == "low":
             matrix_size = low_matrix_size
             num_requests = low_num_requests
+            delay_between_requests = delay_between_requests_low
         elif mode == "high":
             matrix_size = high_matrix_size
             num_requests = high_num_requests
-        else:
-            print("Invalid mode. Exiting.")
+            delay_between_requests = delay_between_requests_high
+        elif mode == "exit":
+            print("Exiting...")
             break
+        else:
+            print("Invalid mode. Please enter 'low' or 'high' or 'exit' to quit.")
+            continue
         
-        send_requests_to_servers(matrix_size, num_requests)
+        send_requests_to_servers(matrix_size, num_requests, delay_between_requests)
 
