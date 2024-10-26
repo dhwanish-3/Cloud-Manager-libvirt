@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import matplotlib.pyplot as plt
 
 matrix_size = 0
 delay_between_requests = 1000000
@@ -35,12 +36,30 @@ servers_lock = threading.Lock()
 # Global round-robin pointer for distributing requests
 server_pointer = 0
 
-def send_request(server_ip, server_port, matrix_size):
+latency_data = [0]
+time_data = [0]
+
+plt.ion()
+fig, ax = plt.subplots()
+ax.clear()
+ax.plot(time_data, latency_data, label="Latency")
+ax.legend()
+ax.set_xlabel('Time (s)')
+ax.set_ylabel('Latency (ms)')
+ax.set_xlim([-100, 0])
+ax.set_ylim([0, 0.1])
+plt.pause(0.01)
+
+def send_request(server_ip, server_port, matrix_size, latency_data):
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        latency = time.time();
         client.sendto(str(matrix_size).encode(), (server_ip, server_port))
         response, _ = client.recvfrom(1024)
-        print(f"Response from {server_ip}:{server_port} - {response.decode()}")
+        response_time = time.time();
+        latency = response_time - latency
+        latency_data.append(latency)
+        print(f"Response from {server_ip}:{server_port} - {response.decode()} with latency {latency}")
     except Exception as e:
         print(f"Failed to send request to {server_ip}:{server_port}. Error: {e}")
     finally:
@@ -65,15 +84,32 @@ def send_requests_to_servers():
         print(f"Server_ip is : {server_ip}")
         server_pointer = server_pointer + 1
 	
-        t = threading.Thread(target=send_request, args=(server_ip, server_port, matrix_size))
+        t = threading.Thread(target=send_request, args=(server_ip, server_port, matrix_size, latency_data))
         threads.append(t)
         t.start()
-
-        if time.time() < next_sleep_time:
-            time.sleep(next_sleep_time - time.time())
-
-    for t in threads:
         t.join()
+
+        # Plotting
+        current_time = time.time()
+        time_data.append(current_time)
+        ax.clear()
+        # for vm_name, usage_data in latency_data.items():
+            # Adjust time data to show the last 100 seconds
+        adjusted_time_data = [(t - current_time) for t in time_data[-500:]]
+        ax.plot(adjusted_time_data, latency_data[-500:], label="Latency")
+        ax.legend()
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Latency (ms)')
+        ax.set_xlim([-100, 0])
+        ax.set_ylim([0, 0.1])
+        plt.pause(0.01)
+
+        # if time.time() < next_sleep_time:
+        #     time.sleep(next_sleep_time - time.time())
+
+    # for t in threads:
+    #     t.join()
+        
 
 def listen_for_autoscaler_notifications(client_ip, client_port):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:

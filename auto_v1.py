@@ -29,7 +29,7 @@ def get_cpu_usage(domain_obj, sleep_time=1):
     return cpu_percent / domain_cpu_cores
 
 # Monitor CPU usage and trigger autoscaling
-def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=50.0, low_cpu_threshold=20.0, interval=1, cooldown_time=100, window_size=3):
+def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=40.0, low_cpu_threshold=20.0, interval=1, cooldown_time=100, window_size=3):
     primary_domain = conn.lookupByName(primary_vm_name)
     if primary_domain is None:
         print(f"Primary domain {primary_vm_name} not found", file=sys.stderr)
