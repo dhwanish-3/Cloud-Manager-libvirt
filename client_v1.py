@@ -2,6 +2,10 @@ import socket
 import threading
 import time
 
+matrix_size = 0
+delay_between_requests = 1000000
+num_requests = 0
+
 # delay between requests
 delay_between_requests_low = 0.2
 delay_between_requests_high = 0.1
@@ -42,8 +46,11 @@ def send_request(server_ip, server_port, matrix_size):
     finally:
         client.close()
 
-def send_requests_to_servers(matrix_size, num_requests, delay_between_requests):
+def send_requests_to_servers():
     global server_pointer
+    global matrix_size
+    global delay_between_requests
+    global num_requests
     threads = []
     
     for _ in range(num_requests):
@@ -89,6 +96,8 @@ def listen_for_autoscaler_notifications(client_ip, client_port):
                         servers.append((new_server_ip, new_server_port))
                     print(f"New VM added. Available servers: {len(servers)}")
 
+
+
 if __name__ == "__main__":
     notification_thread = threading.Thread(target=listen_for_autoscaler_notifications, args=(client_ip, client_port))
     notification_thread.start()
@@ -110,6 +119,4 @@ if __name__ == "__main__":
         else:
             print("Invalid mode. Please enter 'low' or 'high' or 'exit' to quit.")
             continue
-        
-        send_requests_to_servers(matrix_size, num_requests, delay_between_requests)
-
+        send_requests_to_servers()
