@@ -3,10 +3,6 @@ import threading
 import time
 import matplotlib.pyplot as plt
 
-matrix_size = 0
-delay_between_requests = 1000000
-num_requests = 0
-
 # delay between requests
 delay_between_requests_low = 0.2
 delay_between_requests_high = 0.1
@@ -65,11 +61,8 @@ def send_request(server_ip, server_port, matrix_size, latency_data):
     finally:
         client.close()
 
-def send_requests_to_servers():
+def send_requests_to_servers(matrix_size, num_requests, delay_between_requests):
     global server_pointer
-    global matrix_size
-    global delay_between_requests
-    global num_requests
     threads = []
     
     for _ in range(num_requests):
@@ -93,8 +86,7 @@ def send_requests_to_servers():
         current_time = time.time()
         time_data.append(current_time)
         ax.clear()
-        # for vm_name, usage_data in latency_data.items():
-            # Adjust time data to show the last 100 seconds
+        # Adjust time data to show the last 100 seconds
         adjusted_time_data = [(t - current_time) for t in time_data[-500:]]
         ax.plot(adjusted_time_data, latency_data[-500:], label="Latency")
         ax.legend()
@@ -104,11 +96,11 @@ def send_requests_to_servers():
         ax.set_ylim([0, 0.1])
         plt.pause(0.01)
 
-        # if time.time() < next_sleep_time:
-        #     time.sleep(next_sleep_time - time.time())
+        if time.time() < next_sleep_time:
+            time.sleep(next_sleep_time - time.time())
 
-    # for t in threads:
-    #     t.join()
+    for t in threads:
+        t.join()
         
 
 def listen_for_autoscaler_notifications(client_ip, client_port):
@@ -135,6 +127,9 @@ def listen_for_autoscaler_notifications(client_ip, client_port):
 
 
 if __name__ == "__main__":
+    matrix_size = 0
+    delay_between_requests = 1000000
+    num_requests = 0
     notification_thread = threading.Thread(target=listen_for_autoscaler_notifications, args=(client_ip, client_port))
     notification_thread.start()
     print(f"Listening for autoscaler notifications on {client_ip}:{client_port}...")
@@ -155,4 +150,4 @@ if __name__ == "__main__":
         else:
             print("Invalid mode. Please enter 'low' or 'high' or 'exit' to quit.")
             continue
-        send_requests_to_servers()
+        send_requests_to_servers(matrix_size, num_requests, delay_between_requests)
