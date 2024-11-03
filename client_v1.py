@@ -47,17 +47,19 @@ ax.set_ylim([0, 0.1])
 plt.pause(0.01)
 
 def send_request(server_ip, server_port, matrix_size, latency_data):
+    client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    client.settimeout(1)  # Set timeout to 1 second
+    latency = time.time()
     try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        latency = time.time();
         client.sendto(str(matrix_size).encode(), (server_ip, server_port))
         response, _ = client.recvfrom(1024)
-        response_time = time.time();
+        response_time = time.time()
         latency = response_time - latency
         latency_data.append(latency)
         print(f"Response from {server_ip}:{server_port} - {response.decode()} with latency {latency}")
-    except Exception as e:
-        print(f"Failed to send request to {server_ip}:{server_port}. Error: {e}")
+    except socket.timeout:
+        latency_data.append(1)
+        print(f"Request to {server_ip}:{server_port} timed out")
     finally:
         client.close()
 
