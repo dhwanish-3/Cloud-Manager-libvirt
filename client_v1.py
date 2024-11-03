@@ -4,8 +4,8 @@ import time
 import matplotlib.pyplot as plt
 
 # delay between requests
-delay_between_requests_low = 0.2
-delay_between_requests_high = 0.1
+delay_between_requests_low = 0.1
+delay_between_requests_high = 0.05
 
 # Server config
 server_ip = "192.168.122.86"
@@ -21,7 +21,7 @@ high_matrix_size = 1000
 
 # Number of requests
 low_num_requests = 100
-high_num_requests = 200
+high_num_requests = 160
 
 # List of servers available (IPs and Ports)
 servers = [(server_ip, server_port)]
@@ -41,7 +41,7 @@ ax.clear()
 ax.plot(time_data, latency_data, label="Latency")
 ax.legend()
 ax.set_xlabel('Time (s)')
-ax.set_ylabel('Latency (ms)')
+ax.set_ylabel('Latency (s)')
 ax.set_xlim([-100, 0])
 ax.set_ylim([0, 0.1])
 plt.pause(0.01)
@@ -55,11 +55,15 @@ def send_request(server_ip, server_port, matrix_size, latency_data):
         response, _ = client.recvfrom(1024)
         response_time = time.time()
         latency = response_time - latency
-        latency_data.append(latency)
-        print(f"Response from {server_ip}:{server_port} - {response.decode()} with latency {latency}")
+        # Take average of latest 100 values in latency_data
+        if len(latency_data) > 9:
+            avg_latency = (sum(latency_data[-9:]) + latency) / 10
+        else:
+            avg_latency = (sum(latency_data) + latency) / len(latency_data)
+        latency_data.append(avg_latency)
+        print(f"Response from {server_ip}:{server_port} - {response.decode()} with latency {latency} (avg: {avg_latency})")
     except socket.timeout:
-        latency_data.append(1)
-        print(f"Request to {server_ip}:{server_port} timed out")
+        latency_data.append(latency_data[-1])
     finally:
         client.close()
 
@@ -89,11 +93,11 @@ def send_requests_to_servers(matrix_size, num_requests, delay_between_requests):
         time_data.append(current_time)
         ax.clear()
         # Adjust time data to show the last 100 seconds
-        adjusted_time_data = [(t - current_time) for t in time_data[-500:]]
-        ax.plot(adjusted_time_data, latency_data[-500:], label="Latency")
+        adjusted_time_data = [(t - current_time) for t in time_data[-1000:]]
+        ax.plot(adjusted_time_data, latency_data[-1000:], label="Latency")
         ax.legend()
         ax.set_xlabel('Time (s)')
-        ax.set_ylabel('Latency (ms)')
+        ax.set_ylabel('Average Latency (s)')
         ax.set_xlim([-100, 0])
         ax.set_ylim([0, 0.1])
         plt.pause(0.01)

@@ -75,7 +75,7 @@ def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=40.0, low_cp
             low_cpu_count = 0
 
         if high_cpu_count >= (window_size/2) and not running_vm:
-            print(f"High CPU usage detected for {window_size} consecutive intervals: {primary_cpu_usage:.2f}%. Triggering autoscaling...")
+            print(f"High CPU usage detected for {window_size / 2} consecutive intervals: Triggering autoscaling...")
             extra_domain = start_new_vm(conn, extra_vm_name)
             if extra_domain:
                 running_vm = True
@@ -90,7 +90,7 @@ def monitor_and_autoscale(conn, primary_vm_name, high_cpu_threshold=40.0, low_cp
             notify_thread.start()
 
         elif low_cpu_count >= window_size and running_vm:
-            print(f"Low CPU usage detected for {window_size} consecutive intervals: {primary_cpu_usage:.2f}%. Shutting down extra VM...")
+            print(f"Low CPU usage detected for {window_size} consecutive intervals: Shutting down extra VM...")
             stop_extra_vm(extra_domain)
             notify_client_vm_removed(extra_vm_name, extra_vm_ip, extra_vm_port)
             running_vm = False
